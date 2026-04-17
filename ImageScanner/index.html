@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./styles.css">
+    <script src="script.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+    <title>Document</title>
+</head>
+<body>
+    <header>
+        <div class="head">
+            <img class="icon" src="./assets/logo.png">
+            <div class="head-title">
+                <p style="font-weight: bold; font-size: 1.5rem;">Image Scanner</p>
+                <p>AI based image scanning</p>
+            </div>
+        </div>
+        
+    </header>
+
+    <main>
+        <h1>Extract Contact Information</h1>
+        <p>Upload an image to extract phone number, email, websites link</p>
+
+        <div class="container">
+            <div class="left-container">
+                <h2>Upload Image</h2>
+                <div class="upload">
+                    <label for="input-file" id="image-upload">
+                        <input type="file" accept="image/*" id="input-file" hidden>
+                        <div class="img-view" id="view-image">
+                            <img class="icon" src="./assets/upload.png">
+                            <h3>upload from gallery</h3>
+                            <span>Drag & drop or click to browse files</span>
+                        </div>
+                    </label>
+                </div>
+
+                <h2>Details Review</h2>
+                <div class="review">
+                    
+                </div>
+            </div>
+            <div class="right-container">
+                <h2>History tab</h2>
+                <div class="history">
+
+                </div>
+            </div>
+            
+        </div>
+        
+    </main>
+
+    <footer>
+        <div class="foot">
+            <p>OCR Based Image Scanning</p>
+        </div>
+    </footer>
+</body>
+</html>

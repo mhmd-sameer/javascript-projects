@@ -1,0 +1,11 @@
+.input-box {
+    appearance: none;
+    outline: none;
+    height: 30px;
+    width: 200px;
+    font-size: 1.2rem;
+}
+
+main{
+    font-size: 1.2rem;
+}
