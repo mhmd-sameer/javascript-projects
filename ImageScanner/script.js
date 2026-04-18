@@ -1,26 +1,171 @@
-
-
-document.addEventListener("DOMContentLoaded",()=>{
+document.addEventListener("DOMContentLoaded", () => {
 
     const imageUpload = document.getElementById('image-upload');
     const inputFile = document.getElementById('input-file');
     const viewImage = document.getElementById('view-image');
+    const detailsReview = document.getElementById('details-review');
+    const historyDiv = document.querySelector(".history");
 
-    inputFile.addEventListener("change",uploadImage);
-    
-    function uploadImage(){
-        let imgLink = URL.createObjectURL(inputFile.files[0]);
+
+    inputFile.addEventListener("change", async () => {
+        const file = inputFile.files[0];
+        if (!file) return;
+
+        uploadImage(file);
+        await processOCR(file);
+    });
+
+
+    imageUpload.addEventListener("dragover", (e) => {
+        e.preventDefault();
+    });
+
+    imageUpload.addEventListener("drop", async (e) => {
+        e.preventDefault();
+
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+
+        inputFile.files = e.dataTransfer.files;
+
+        uploadImage(file);
+        await processOCR(file);
+    });
+
+
+    function uploadImage(file) {
+        const imgLink = URL.createObjectURL(file);
         viewImage.style.backgroundImage = `url(${imgLink})`;
         viewImage.textContent = "";
     }
 
-    imageUpload.addEventListener("dragover",(event)=>{
-        event.preventDefault();
-    })
+    async function processOCR(file) {
 
-    imageUpload.addEventListener("drop",(event)=>{
-        event.preventDefault();
-        inputFile.files = event.dataTransfer.files;
-        uploadImage();
-    })
+        detailsReview.innerHTML = `<p class="review-container">Processing...</p>`;
+
+        const worker = await Tesseract.createWorker();
+
+        await worker.loadLanguage('eng');
+        await worker.initialize('eng');
+
+        const { data: { text } } = await worker.recognize(file);
+
+        await worker.terminate();
+
+        console.log("OCR TEXT:\n", text);
+
+        const result = extractDetails(text);
+
+        renderResults(result);
+    }
+
+    function extractDetails(text) {
+
+
+
+        const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+        const phoneRegex = /(\+91[\s-]?|91[\s-]?|0)?[6-9]{4}[\s]\d{5}/g;
+        const urlRegex = /\b(https?:\/\/|www\.)[^\s]+/gi;
+
+        const emails = [...new Set(text.match(emailRegex) || [])];
+        const phones = [...new Set(text.match(phoneRegex) || [])];
+        const urls = [...new Set(text.match(urlRegex) || [])];
+
+        return { emails, phones, urls };
+    }
+
+    function renderResults({ emails, phones, urls }) {
+
+        detailsReview.innerHTML = `
+            <div class="display-info">
+            
+                <h3 class="details-title">Extracted Details</h3>
+
+                <div class="details-grid">
+                    <b>Emails:</b><br>
+                    ${renderEditableList(emails, "email")}
+                </div>
+
+                <div class="details-grid">
+                    <b>Phone Numbers:</b><br>
+                    ${renderEditableList(phones, "phone")}
+                </div>
+
+                <div class="details-grid">
+                    <b>Websites:</b><br>
+                    ${renderEditableList(urls, "url")}
+                </div>
+
+                <button id="save-btn" class="save-btn">Save</button>
+
+            </div>
+        `;
+
+        document.getElementById("save-btn")
+            .addEventListener("click", () => getUpdatedData());
+    }
+
+    function renderEditableList(arr, type) {
+
+        if (arr.length === 0) {
+            return `
+                <input 
+                    type="text"
+                    placeholder="No ${type} found"
+                    class="editable-field"
+                    data-type="${type}"
+                />
+            `;
+        }
+
+        return arr.map((item, index) => `
+            <input 
+                type="text"
+                value="${item}"
+                class="editable-field"
+                data-type="${type}"
+                data-index="${index}"
+            /><br>
+        `).join("");
+    }
+
+
+    function getUpdatedData() {
+
+        const inputs = document.querySelectorAll(".editable-field");
+
+        const updatedData = {
+            emails: [],
+            phones: [],
+            urls: []
+        };
+
+        inputs.forEach(input => {
+            const type = input.dataset.type;
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            if (type === "email") updatedData.emails.push(value);
+            if (type === "phone") updatedData.phones.push(value);
+            if (type === "url") updatedData.urls.push(value);
+        });
+
+        console.log("Updated Data:", updatedData);
+
+        const file = inputFile.files[0];
+        if (!file) return;
+
+        const imgURL = URL.createObjectURL(file);
+
+        historyDiv.innerHTML += `
+            <div class="history-grid">
+                <img src="${imgURL}" width="80" />
+                <div class="details">
+                    <p>${updatedData.emails.length + updatedData.phones.length + updatedData.urls.length} items</p>
+                </div>
+            </div>
+        `;
+    }
+
 });
