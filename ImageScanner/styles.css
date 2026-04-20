@@ -187,6 +187,7 @@ main{
     border:none;
     color: white;
     font-size:1.2rem;
+    cursor: pointer;
 }
 .history-container{
     display: flex;

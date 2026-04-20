@@ -45,8 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const worker = await Tesseract.createWorker();
 
-        await worker.loadLanguage('eng');
-        await worker.initialize('eng');
+    
 
         const { data: { text } } = await worker.recognize(file);
 
@@ -154,18 +153,80 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("Updated Data:", updatedData);
 
         const file = inputFile.files[0];
-        if (!file) return;
+        if (file) {
+            saveToDB(updatedData, file);
+        }
 
-        const imgURL = URL.createObjectURL(file);
-
-        historyDiv.innerHTML += `
-            <div class="history-grid">
-                <img src="${imgURL}" width="80" />
-                <div class="details">
-                    <p>${updatedData.emails.length + updatedData.phones.length + updatedData.urls.length} items</p>
-                </div>
-            </div>
-        `;
+        
     }
+
+    const openRequest = indexedDB.open("OCR_DB",1);
+
+    openRequest.onupgradeneeded = function(event){
+        const db = event.target.result;
+
+        if(!db.objectStoreNames.contains("contacts")){
+            db.createObjectStore("contacts", {keyPath: "id", autoIncrement : true});
+        }
+    }
+
+    function saveToDB(data, file){
+        const request = indexedDB.open("OCR_DB",1);
+
+        request.onsuccess = function (event){
+            const db = event.target.result;
+
+            const tx = db.transaction("contacts","readwrite");
+            const store = tx.objectStore("contacts");
+
+            const record = {
+                image : file,
+                emails : data.emails,
+                phones : data.phones, 
+                urls : data.urls,
+                date : new Date().toISOString()
+            };
+
+            store.add(record);
+            tx.oncomplete = function () {
+                loadHistory(); 
+            };
+        }
+        
+    }
+
+    function loadHistory() {
+    const request = indexedDB.open("OCR_DB", 1);
+
+    request.onsuccess = function (event) {
+        const db = event.target.result;
+
+        const tx = db.transaction("contacts", "readonly");
+        const store = tx.objectStore("contacts");
+
+        const getAll = store.getAll();
+
+        getAll.onsuccess = function () {
+            const history = getAll.result;
+
+            const historyDiv = document.getElementById("history-panel");
+
+
+            history.forEach(item => {
+                const imgURL = URL.createObjectURL(item.image);
+
+                historyDiv.innerHTML += `
+                    <div class="history-grid">
+                        <img src="${imgURL}" width="80"/>
+                        <div>
+                            <p>${item.emails.length + item.phones.length + item.urls.length} items</p>
+                        </div>
+                    </div>
+                `;
+            });
+        };
+    };
+}
+loadHistory();
 
 });
